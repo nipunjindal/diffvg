@@ -5,7 +5,8 @@ from fontTools.misc import transform
 from fontTools.ttLib import TTFont
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
-    
+from fontTools.varLib import instancer, mutator
+
 # Use GPU if available
 pydiffvg.set_use_gpu(torch.cuda.is_available())
 
@@ -28,13 +29,13 @@ target_glyph.draw(target_svgpen_transformed)
 target_path = target_svgpen.getCommands()
 
 # https://www.flaticon.com/free-icon/black-plane_61212#term=airplane&page=1&position=8
-shapes = pydiffvg.from_svg_path(target_path)
+target_shapes = pydiffvg.from_svg_path(target_path)
 # print(target_path)
-path_group = pydiffvg.ShapeGroup(shape_ids = torch.tensor([0]),
+target_path_group = pydiffvg.ShapeGroup(shape_ids = torch.tensor([0]),
                                  fill_color = torch.tensor([0.3, 0.6, 0.3, 1.0]))
-shape_groups = [path_group]
-scene_args = pydiffvg.RenderFunction.serialize_scene(\
-    canvas_width, canvas_height, shapes, shape_groups)
+target_shape_groups = [target_path_group]
+target_scene_args = pydiffvg.RenderFunction.serialize_scene(\
+    canvas_width, canvas_height, target_shapes, target_shape_groups)
 
 render = pydiffvg.RenderFunction.apply
 img = render(canvas_width, # width
@@ -43,7 +44,7 @@ img = render(canvas_width, # width
              2,   # num_samples_y
              0,   # seed
              None, # background_image
-             *scene_args)
+             *target_scene_args)
 # The output image is in linear RGB space. Do Gamma correction before saving the image.
 pydiffvg.imwrite(img.cpu(), 'results/optimize_vf/target.png', gamma=2.2)
 target = img.clone()
@@ -52,7 +53,8 @@ target = img.clone()
 
 # Variable font
 
-start_font = TTFont("/content/diffvg/font_data/variable/RobotoFlex.ttf")
+start_variable_font = TTFont("/content/diffvg/font_data/variable/OpenSans.ttf")
+start_font = mutator.instantiateVariableFont(start_variable_font, {"wght": 300, "wdth": 100})
 
 # transformation
 start_units_per_em = start_font['head'].unitsPerEm
@@ -70,19 +72,22 @@ start_path = start_svgpen.getCommands()
 
 # Move the path to produce initial guess
 # normalize points for easier learning rate
-noise = torch.FloatTensor(shapes[0].points.shape).uniform_(0.0, 1.0)
-points_n = (shapes[0].points.clone() + (noise * 60 - 30)) / 510.0
-points_n.requires_grad = True
+# noise = torch.FloatTensor(shapes[0].points.shape).uniform_(0.0, 1.0)
+start_shapes = pydiffvg.from_svg_path(start_path)
+start_points_n = start_shapes[0].points.clone()
+start_points_n.requires_grad = True
 color = torch.tensor([0.3, 0.2, 0.5, 1.0], requires_grad=True)
-shapes[0].points = points_n * 510
-path_group.fill_color = color
-scene_args = pydiffvg.RenderFunction.serialize_scene(\
-    canvas_width, canvas_height, shapes, shape_groups)
-img = render(510, # width
-             510, # height
+start_shapes[0].points = start_points_n
+start_path_group = pydiffvg.ShapeGroup(shape_ids = torch.tensor([0]),
+                                 fill_color = color)
+start_shape_groups = [start_path_group]
+start_scene_args = pydiffvg.RenderFunction.serialize_scene(\
+    canvas_width, canvas_height, start_shapes, start_shape_groups)
+img = render(canvas_width, # width
+             canvas_height, # height
              2,   # num_samples_x
              2,   # num_samples_y
              1,   # seed
              None, # background_image
-             *scene_args)
+             *start_scene_args)
 pydiffvg.imwrite(img.cpu(), 'results/single_path/init.png', gamma=2.2)
