@@ -27,13 +27,13 @@ def font_glyph_svg(font, glyph):
 
 def static_font_glyph_svg(font_path, glyph):
     font = TTFont(font_path)
-    return font(font, glyph)
+    return font_glyph_svg(font, glyph)
 
 def variable_font_glyph_svg(font_path, glyph, dict):
     variable_font = TTFont("/content/diffvg/font_data/variable/OpenSans.ttf")
     font = mutator.instantiateVariableFont(variable_font, dict)
     
-    return font(font, glyph)
+    return font_glyph_svg(font, glyph)
 
 # Use GPU if available
 pydiffvg.set_use_gpu(torch.cuda.is_available())
