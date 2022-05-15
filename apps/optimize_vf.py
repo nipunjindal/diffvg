@@ -17,7 +17,7 @@ def font_glyph_svg(font, glyph):
     xform = transform.Identity.translate(0, svg_per_em).scale(svg_per_em, -svg_per_em).transform(ttf2em)
 
     # glyph to svg
-    glyph_set = target_font.getGlyphSet()
+    glyph_set = font.getGlyphSet()
     svgpen = SVGPathPen(glyph_set)
     svgpen_transformed = TransformPen(svgpen, xform)
     glyph = glyph_set["C"]
