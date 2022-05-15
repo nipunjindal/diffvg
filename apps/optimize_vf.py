@@ -103,6 +103,7 @@ target = target_img.clone()
 # normalize points for easier learning rate
 # noise = torch.FloatTensor(shapes[0].points.shape).uniform_(0.0, 1.0)
 start_axis_value = torch.tensor(300.0, requires_grad=True)
+print({"wght": start_axis_value, "wdth": 100})
 start_path = variable_font_glyph_svg("/content/diffvg/font_data/variable/OpenSans.ttf", "C", {"wght": start_axis_value, "wdth": 100})
 start_shapes = pydiffvg.from_svg_path(start_path)
 # start_points_n = start_shapes[0].points.clone()
