@@ -103,8 +103,8 @@ target = target_img.clone()
 # normalize points for easier learning rate
 # noise = torch.FloatTensor(shapes[0].points.shape).uniform_(0.0, 1.0)
 start_axis_value = torch.tensor(300.0, requires_grad=True)
-print({"wght": start_axis_value.cpu().numpy()[0], "wdth": 100})
-start_path = variable_font_glyph_svg("/content/diffvg/font_data/variable/OpenSans.ttf", "C", {"wght": start_axis_value.cpu().numpy()[0], "wdth": 100})
+print({"wght": start_axis_value.item(), "wdth": 100})
+start_path = variable_font_glyph_svg("/content/diffvg/font_data/variable/OpenSans.ttf", "C", {"wght": start_axis_value.item(), "wdth": 100})
 start_shapes = pydiffvg.from_svg_path(start_path)
 # start_points_n = start_shapes[0].points.clone()
 # start_points_n.requires_grad = True
@@ -131,7 +131,7 @@ for t in range(100):
     print('iteration:', t)
     optimizer.zero_grad()
     # Forward pass: render the image.
-    interim_start_path = variable_font_glyph_svg("/content/diffvg/font_data/variable/OpenSans.ttf", "C", {"wght": start_axis_value.cpu().numpy()[0], "wdth": 100})
+    interim_start_path = variable_font_glyph_svg("/content/diffvg/font_data/variable/OpenSans.ttf", "C", {"wght": start_axis_value.item(), "wdth": 100})
     start_shapes = pydiffvg.from_svg_path(interim_start_path)
     start_path_group.fill_color = color
     scene_args = pydiffvg.RenderFunction.serialize_scene(\
