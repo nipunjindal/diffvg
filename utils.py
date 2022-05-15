@@ -1,4 +1,4 @@
 from IPython.display import Image, display
 
-def displayImage(p):
+def display_image(p):
     display(Image(p))
