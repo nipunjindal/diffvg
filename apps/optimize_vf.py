@@ -14,17 +14,17 @@ canvas_width, canvas_height = 510, 510
 target_font = TTFont("/content/diffvg/font_data/static/OpenSans-Bold.ttf")
 
 # transformation
-units_per_em = target_font['head'].unitsPerEm
-ttf2em = transform.Identity.scale(1/units_per_em, 1/units_per_em)
-svg_per_em=100
-xform = transform.Identity.translate(0, svg_per_em).scale(svg_per_em, -svg_per_em).transform(ttf2em)
+target_units_per_em = target_font['head'].unitsPerEm
+target_ttf2em = transform.Identity.scale(1/target_units_per_em, 1/target_units_per_em)
+target_svg_per_em=100
+target_xform = transform.Identity.translate(0, target_svg_per_em).scale(target_svg_per_em, -target_svg_per_em).transform(target_ttf2em)
 
 # glyph to svg
 target_glyph_set = target_font.getGlyphSet()
 target_svgpen = SVGPathPen(target_glyph_set)
-target_svgpen_transformed = TransformPen(target_svgpen, xform)
-glyph = target_glyph_set["C"]
-glyph.draw(target_svgpen_transformed)  
+target_svgpen_transformed = TransformPen(target_svgpen, target_xform)
+target_glyph = target_glyph_set["C"]
+target_glyph.draw(target_svgpen_transformed)  
 target_path = target_svgpen.getCommands()
 
 # https://www.flaticon.com/free-icon/black-plane_61212#term=airplane&page=1&position=8
@@ -48,4 +48,41 @@ img = render(canvas_width, # width
 pydiffvg.imwrite(img.cpu(), 'results/optimize_vf/target.png', gamma=2.2)
 target = img.clone()
 
-print("display_image('results/optimize_vf/target.png')")
+# print("display_image('results/optimize_vf/target.png')")
+
+# Variable font
+
+start_font = TTFont("/content/diffvg/font_data/variable/RobotoFlex.ttf")
+
+# transformation
+start_units_per_em = start_font['head'].unitsPerEm
+start_ttf2em = transform.Identity.scale(1/start_units_per_em, 1/start_units_per_em)
+start_svg_per_em=100
+start_xform = transform.Identity.translate(0, start_svg_per_em).scale(start_svg_per_em, -start_svg_per_em).transform(start_ttf2em)
+
+# glyph to svg
+start_glyph_set = start_font.getGlyphSet()
+start_svgpen = SVGPathPen(start_glyph_set)
+start_svgpen_transformed = TransformPen(start_svgpen, start_xform)
+start_glyph = start_glyph_set["C"]
+start_glyph.draw(start_svgpen_transformed)  
+start_path = start_svgpen.getCommands()
+
+# Move the path to produce initial guess
+# normalize points for easier learning rate
+noise = torch.FloatTensor(shapes[0].points.shape).uniform_(0.0, 1.0)
+points_n = (shapes[0].points.clone() + (noise * 60 - 30)) / 510.0
+points_n.requires_grad = True
+color = torch.tensor([0.3, 0.2, 0.5, 1.0], requires_grad=True)
+shapes[0].points = points_n * 510
+path_group.fill_color = color
+scene_args = pydiffvg.RenderFunction.serialize_scene(\
+    canvas_width, canvas_height, shapes, shape_groups)
+img = render(510, # width
+             510, # height
+             2,   # num_samples_x
+             2,   # num_samples_y
+             1,   # seed
+             None, # background_image
+             *scene_args)
+pydiffvg.imwrite(img.cpu(), 'results/single_path/init.png', gamma=2.2)
